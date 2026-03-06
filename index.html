@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Колесо удачи</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #1e2b3a; color: white; margin: 0; padding: 20px; }
+        .spins-counter { font-size: 18px; margin: 10px; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 20px; display: inline-block; }
+        .wheel-container { position: relative; width: 280px; height: 280px; margin: 20px auto; }
+        .wheel { width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(#ff6b6b 0deg 45deg, #4ecdc4 45deg 90deg, #ffe66d 90deg 135deg, #ff9f1c 135deg 180deg, #bf8fad 180deg 225deg, #6c5b7b 225deg 270deg, #f08a5d 270deg 315deg, #b83b5e 315deg 360deg); transition: transform 2s ease-out; }
+        .pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-top: 40px solid red; z-index: 10; }
+        .btn { background: #2ecc71; color: white; border: none; padding: 15px 40px; font-size: 20px; border-radius: 30px; margin: 20px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 0 #1e8a4d; }
+        .btn:active { transform: translateY(4px); box-shadow: none; }
+        .info { background: #2c3e50; padding: 15px; border-radius: 10px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>🎡 Колесо удачи NFT</h1>
+    <div class="spins-counter">🎟 Билетиков: <span id="spins">0</span></div>
+    <div class="wheel-container">
+        <div class="wheel" id="wheel"></div>
+        <div class="pointer"></div>
+    </div>
+    <button class="btn" id="spinBtn">Крутить</button>
+    <div class="info" id="message"></div>
+    <script>
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+        let userId = tg.initDataUnsafe.user?.id;
+        let spins = 0;
+        let spinning = false;
+
+        // Запрашиваем количество билетиков
+        fetch(`/api/get_spins?user_id=${userId}`)
+            .then(r => r.json())
+            .then(data => {
+                spins = data.spins;
+                document.getElementById('spins').innerText = spins;
+            });
+
+        document.getElementById('spinBtn').addEventListener('click', function() {
+            if (spinning) return;
+            if (spins <= 0) {
+                document.getElementById('message').innerText = '😕 У вас нет билетиков! Пригласите друга.';
+                return;
+            }
+            spinning = true;
+            let wheel = document.getElementById('wheel');
+            let rotation = Math.floor(Math.random() * 360) + 720;
+            wheel.style.transform = 'rotate(' + rotation + 'deg)';
+            setTimeout(() => {
+                spinning = false;
+                spins--;
+                document.getElementById('spins').innerText = spins;
+                tg.sendData(JSON.stringify({action: 'spin'}));
+                document.getElementById('message').innerText = '🎁 Поздравляем! Вы выиграли подарок! Проверьте инвентарь.';
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
